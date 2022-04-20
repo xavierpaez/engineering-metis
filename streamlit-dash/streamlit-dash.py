@@ -20,7 +20,7 @@ def connect():
         print("Error while connecting to PostgreSQL", error)
         st.write('Can not connected to db')
     print("Connection created successfuly")
-    return conn,
+    return conn
 
 
 conn = connect()
@@ -61,8 +61,6 @@ bar_chart = alt.Chart(top_10).mark_bar().encode(
 ).properties(height=500)
 
 st.altair_chart(bar_chart, use_container_width=True)
-# Healthcare VS Other Organization Type
-st.subheader('Percentage Hospital Organizations')
 
 # Organization look up
 st.subheader('Organization Look up')
