@@ -1,12 +1,12 @@
+from pickle import TRUE
 import matplotlib.pyplot as plt
 import pandas as pd
 import streamlit as st
 import psycopg2
 from sqlalchemy import create_engine
 import altair as alt
-
 # Streamlit Config
-st.set_page_config(layout="wide")
+st.set_page_config(page_title="IRS Form 990", layout="wide")
 
 # Connecting Streamlit to Postgres
 
@@ -57,8 +57,19 @@ df = pd.read_sql('select * from {}'.format(selected_table), conn)
 top_10 = df.sort_values('revenue', ascending=False).head(10)
 top_10 = top_10[['name', 'revenue']]
 bar_chart = alt.Chart(top_10).mark_bar().encode(
-    y=alt.Y('revenue', sort='x'),
-    x='name'
+    y=alt.Y('revenue'),
+    x=alt.X('name:N', sort='-y'),
+    tooltip='revenue:N'
+).properties(height=500)
+
+# Display States with more Organizations
+top_states_df = df['state'].value_counts().reset_index().rename(
+    columns={'index': 'state', 'state': 'count'}).head(10)
+
+state_bar_chart = alt.Chart(top_states_df).mark_bar().encode(
+    y=alt.Y('count'),
+    x=alt.X('state:N', sort='-y'),
+    tooltip='count:N'
 ).properties(height=500)
 
 col1, col2 = st.columns(2)
@@ -67,9 +78,13 @@ with col1:
     col1.altair_chart(bar_chart, use_container_width=True)
 
     col1.subheader('Top States by Organizations Count')
-# Display States with more Organizations
-print(df['state'].value_counts())
+    col1.altair_chart(state_bar_chart, use_container_width=True)
 
+# United States Map
+states = alt.topo_feature(
+    'https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json', feature='states')
+
+variable_list = ['count']
 
 # Display Hospital VS Non Hospital Organizations Pie Chart
 col2.subheader('Hospital VS Non Hospital Organizations')
@@ -78,6 +93,7 @@ serie = df['is_hospital'].value_counts().reset_index().rename(
 is_hospital_chart = alt.Chart(serie).mark_arc().encode(
     theta=alt.Theta(field="value", type="quantitative"),
     color=alt.Color(field="is_hospital", type="nominal"),
+    tooltip='value:N'
 )
 col2.altair_chart(is_hospital_chart, use_container_width=True)
 
@@ -92,6 +108,7 @@ with col1:
 #     df['name'].sort_values())
 # st.write(
 #     '''#### OR''')
+
     ein = st.text_input('Enter Employee Identification Number (EIN)', '')
     if ein != "":
         ein = ein.replace("-", "")
